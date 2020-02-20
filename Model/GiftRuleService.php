@@ -112,7 +112,12 @@ class GiftRuleService implements GiftRuleServiceInterface
 
         if (is_array($giftRules)) {
             foreach ($giftRules as $giftRuleId => $giftRuleCode) {
-                $gifts[$giftRuleId] = $this->giftRuleCacheHelper->getCachedGiftRule($giftRuleCode);
+                $giftRuleCachedData = $this->giftRuleCacheHelper->getCachedGiftRule($giftRuleCode);
+                if (!$giftRuleCachedData) {
+                    continue;
+                }
+
+                $gifts[$giftRuleId] = $giftRuleCachedData;
                 $gifts[$giftRuleId][GiftRuleDataInterface::RULE_ID] = $giftRuleId;
                 $gifts[$giftRuleId][GiftRuleDataInterface::CODE] = $giftRuleCode;
                 $gifts[$giftRuleId][GiftRuleDataInterface::REST_NUMBER]
@@ -151,6 +156,9 @@ class GiftRuleService implements GiftRuleServiceInterface
         }
 
         $giftRuleData = $this->giftRuleCacheHelper->getCachedGiftRule($identifier);
+        if (!$giftRuleData) {
+            throw new Exception(__('The gift rule is not valid.'));
+        }
 
         foreach ($products as $product) {
             if (!(isset($product['id']) && isset($product['qty']))) {
@@ -185,6 +193,10 @@ class GiftRuleService implements GiftRuleServiceInterface
         }
 
         $giftRuleData   = $this->giftRuleCacheHelper->getCachedGiftRule($identifier);
+        if (!$giftRuleData) {
+            throw new Exception(__('The gift rule is not valid.'));
+        }
+
         $quoteGiftItems = $this->getQuoteGiftItems($quote, $giftRuleId);
 
         foreach ($products as $product) {
