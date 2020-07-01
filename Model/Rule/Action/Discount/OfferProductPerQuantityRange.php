@@ -157,6 +157,8 @@ class OfferProductPerQuantityRange extends AbstractDiscount
             // NOTE: This is a hacky work-around to allow us to _actually_ validate the cart rule.
             $item->setBypassGiftRuleValidation(true);
             $allItems = $item->getAllItems();
+            // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
+            //       to clone the quote without persisting everything and without Magento soiling the bed.
             $item->setAllItems([$item]);
             if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
                 $totalValidQuantity += $item->getTotalQty();
