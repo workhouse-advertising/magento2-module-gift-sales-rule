@@ -112,7 +112,20 @@ class GiftRuleService implements GiftRuleServiceInterface
 
         if (is_array($giftRules)) {
             foreach ($giftRules as $giftRuleId => $giftRuleCode) {
-                $gifts[$giftRuleId] = $this->giftRuleCacheHelper->getCachedGiftRule($giftRuleCode);
+                // TODO: Fix the caching behaviour as it should ideally fetch the resource if it 
+                //       doesn't exist in the cache and if it's not _supposed_ to be in the cache 
+                //       then that should be handled correctly too.
+                $giftRule = $this->giftRuleCacheHelper->getCachedGiftRule($giftRuleCode);
+                // NOTE: This appears to be caching the rules against a checkout session and if the cache 
+                //       clears during the checkout (either through standard means or updating the cart rule)
+                //       the customer will not be able to load "/checkout/cart/".
+                // TODO: Currently refreshing "/checkout/cart/" with the cache empty doesn't show any free gifts
+                //       on the first load. This needs to be fixed so that the rule is correctly loaded in on the 
+                //       first page load too.
+                // Just bypass this rule if it wasn't in the cache.
+                if (!$giftRule) continue;
+
+                $gifts[$giftRuleId] = $giftRule;
                 $gifts[$giftRuleId][GiftRuleDataInterface::RULE_ID] = $giftRuleId;
                 $gifts[$giftRuleId][GiftRuleDataInterface::CODE] = $giftRuleCode;
                 $gifts[$giftRuleId][GiftRuleDataInterface::REST_NUMBER]
