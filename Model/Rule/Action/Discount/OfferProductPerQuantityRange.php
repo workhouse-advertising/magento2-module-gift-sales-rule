@@ -107,13 +107,11 @@ class OfferProductPerQuantityRange extends AbstractDiscount
             /** @var GiftRule $giftRule */
             $giftRule = $this->giftRuleRepository->getById($rule->getRuleId());
 
-            if ($quote->getItemsSummaryQty() >= $giftRule->getQuantityRange()) {
-                /** @var int $level */
+            // Match the quantity from the rule conditions
+            $totalValidQuantity = $this->getTotalValidQuantity($rule, $item->getQuote());
 
-                // TODO: The quantity needs to be of the products that match the current rule.
-                $totalQuantity = $quote->getItemsSummaryQty();
-
-                $range = floor($totalQuantity / $giftRule->getQuantityRange());
+            if ($totalValidQuantity >= $giftRule->getQuantityRange()) {
+                $range = floor($totalValidQuantity / $giftRule->getQuantityRange());
 
                 // Save active gift rule in session.
                 $giftRuleSessionData = $this->checkoutSession->getGiftRules();
@@ -139,5 +137,34 @@ class OfferProductPerQuantityRange extends AbstractDiscount
         }
 
         return $discountData;
+    }
+
+    /**
+     * Get the total valid quantity for a quote based off of the items that are valid for
+     * the current cart rule conditions.
+     *
+     * @param Rule $rule
+     * @param Quote $quote
+     * @return void
+     */
+    protected function getTotalValidQuantity($rule, $quote)
+    {
+        $totalValidQuantity = 0;
+        foreach ($quote->getItems() as $item) {
+            // NOTE: Cloning quote items doesn't work, children won't exist, etc...
+            // $item = clone $quoteItem;
+            // $item->setChildren($quoteItem->getChildren());
+            // NOTE: This is a hacky work-around to allow us to _actually_ validate the cart rule.
+            $item->setBypassGiftRuleValidation(true);
+            $allItems = $item->getAllItems();
+            $item->setAllItems([$item]);
+            if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
+                $totalValidQuantity += $item->getTotalQty();
+            }
+            // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
+            $item->setAllItems($allItems);
+            $item->setBypassGiftRuleValidation(false);
+        }
+        return $totalValidQuantity;
     }
 }

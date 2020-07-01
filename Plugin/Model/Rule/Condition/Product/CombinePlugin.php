@@ -56,11 +56,19 @@ class CombinePlugin
         callable $proceed,
         AbstractModel $model
     ) {
-        if ($this->giftRuleHelper->isGiftRule($subject->getRule())) {
+        // TODO: Consider adding type checks to only process this if the AbstractModel is a QuoteItem
+        //       instead of the current workaround of `$model->getQuote()`.
+        // NOTE: Calling `$model->getBypassGiftRuleValidation()` is only here as this will otherwise _always_
+        //       return true for _any_ gift rule.
+        if ($this->giftRuleHelper->isGiftRule($subject->getRule()) && $model->getQuote() && !$model->getBypassGiftRuleValidation()) {
             if (!$this->giftRuleHelper->isValidGiftRule($subject->getRule(), $model->getQuote())) {
                 return false;
             }
-
+            // Shouldn't always return `true` as this just means that we can't actually validate this rule against
+            // the actual rule conditions.
+            // TODO: Investigate the rationale for always returning `true` but it appears that the cart rule doesn't work at all
+            //       without it. This appears to have something to do with the way that this module handles valid rules by storing
+            //       them in the session and cache. Very peculiar 
             return true;
         }
 

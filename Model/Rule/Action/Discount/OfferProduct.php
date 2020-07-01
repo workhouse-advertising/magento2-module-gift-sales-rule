@@ -27,6 +27,8 @@ use Smile\GiftSalesRule\Model\GiftRule;
 
 /**
  * Class OfferProduct
+ * 
+ * TODO: Consider just adding an option to limit the quantity rather than have a OfferProductPerQuantityRange rule.
  *
  * @author    Maxime Queneau <maxime.queneau@smile.fr>
  * @copyright 2019 Smile
