@@ -26,7 +26,7 @@ define([
          * @returns {boolean}
          */
         isOfferProducRule: function () {
-            return this.value() == 'offer_product' || this.value() == 'offer_product_per_price_range';
+            return this.value() == 'offer_product' || this.value() == 'offer_product_per_price_range' || this.value() == 'offer_product_per_quantity_range';
         },
 
         /**
@@ -57,6 +57,9 @@ define([
                     .hide();
                 uiRegistry
                     .get('sales_rule_form.sales_rule_form.actions.price_range')
+                    .hide();
+                uiRegistry
+                    .get('sales_rule_form.sales_rule_form.actions.quantity_range')
                     .hide();
             }
         },

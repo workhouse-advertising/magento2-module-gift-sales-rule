@@ -75,9 +75,11 @@ class ReadHandler implements ExtensionInterface
                 $maximumNumber = $giftRule->getMaximumNumberProduct();
                 $attributes['gift_rule'][GiftRuleInterface::MAXIMUM_NUMBER_PRODUCT] = $maximumNumber;
                 $attributes['gift_rule'][GiftRuleInterface::PRICE_RANGE] = $giftRule->getPriceRange();
+                $attributes['gift_rule'][GiftRuleInterface::QUANTITY_RANGE] = $giftRule->getQuantityRange();
             } catch (NoSuchEntityException $exception) {
                 $attributes['gift_rule'][GiftRuleInterface::MAXIMUM_NUMBER_PRODUCT] = null;
                 $attributes['gift_rule'][GiftRuleInterface::PRICE_RANGE] = null;
+                $attributes['gift_rule'][GiftRuleInterface::QUANTITY_RANGE] = null;
             }
         }
         $entity->setExtensionAttributes($attributes);

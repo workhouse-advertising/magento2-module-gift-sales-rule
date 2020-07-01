@@ -26,12 +26,14 @@ interface GiftRuleInterface
     const RULE_ID                = 'rule_id';
     const MAXIMUM_NUMBER_PRODUCT = 'maximum_number_product';
     const PRICE_RANGE            = 'price_range';
+    const QUANTITY_RANGE         = 'quantity_range';
 
     /**
      * Rule type actions
      */
     const OFFER_PRODUCT                 = 'offer_product';
     const OFFER_PRODUCT_PER_PRICE_RANGE = 'offer_product_per_price_range';
+    const OFFER_PRODUCT_PER_QUANTITY_RANGE = 'offer_product_per_quantity_range';
 
     /**
      * Get the maximum number product.

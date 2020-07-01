@@ -28,7 +28,7 @@ define([
             var value = uiRegistry
                 .get('sales_rule_form.sales_rule_form.actions.simple_action')
                 .value();
-            return value == 'offer_product' || value == 'offer_product_per_price_range';
+            return value == 'offer_product' || value == 'offer_product_per_price_range' || value == 'offer_product_per_quantity_range';
         },
 
         /**

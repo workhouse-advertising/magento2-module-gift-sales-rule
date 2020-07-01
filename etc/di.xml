@@ -44,6 +44,11 @@
             <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
         </arguments>
     </type>
+    <type name="Smile\GiftSalesRule\Model\Rule\Action\Discount\OfferProductPerQuantityRange">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
     <type name="Smile\GiftSalesRule\Observer\CollectGiftRule">
         <arguments>
             <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
@@ -55,6 +60,7 @@
             <argument name="giftRule" xsi:type="array">
                 <item name="1" xsi:type="const">Smile\GiftSalesRule\Api\Data\GiftRuleInterface::OFFER_PRODUCT</item>
                 <item name="2" xsi:type="const">Smile\GiftSalesRule\Api\Data\GiftRuleInterface::OFFER_PRODUCT_PER_PRICE_RANGE</item>
+                <item name="3" xsi:type="const">Smile\GiftSalesRule\Api\Data\GiftRuleInterface::OFFER_PRODUCT_PER_QUANTITY_RANGE</item>
             </argument>
         </arguments>
     </type>
@@ -63,6 +69,7 @@
             <argument name="discountRules" xsi:type="array">
                 <item name="offer_product" xsi:type="string">Smile\GiftSalesRule\Model\Rule\Action\Discount\OfferProduct</item>
                 <item name="offer_product_per_price_range" xsi:type="string">Smile\GiftSalesRule\Model\Rule\Action\Discount\OfferProductPerPriceRange</item>
+                <item name="offer_product_per_quantity_range" xsi:type="string">Smile\GiftSalesRule\Model\Rule\Action\Discount\OfferProductPerQuantityRange</item>
             </argument>
         </arguments>
     </type>

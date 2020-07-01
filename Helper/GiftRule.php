@@ -101,6 +101,7 @@ class GiftRule extends AbstractHelper
             $valid = false;
         }
 
+        // TODO: Consider adding similar checks for GiftRuleInterface::OFFER_PRODUCT_PER_QUANTITY_RANGE
         if ($valid && $rule->getSimpleAction() == GiftRuleInterface::OFFER_PRODUCT_PER_PRICE_RANGE) {
             /**
              * Rules load by collection => extension attributes not present in rule entity

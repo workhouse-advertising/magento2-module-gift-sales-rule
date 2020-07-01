@@ -83,12 +83,21 @@ class ValueProviderPlugin
             'value' => GiftRuleInterface::OFFER_PRODUCT_PER_PRICE_RANGE,
         ];
 
+        $result['actions']['children']['simple_action']['arguments']['data']['config']['options'][] = [
+            'label' => __('to offer product per price range'),
+            'value' => GiftRuleInterface::OFFER_PRODUCT_PER_QUANTITY_RANGE,
+        ];
+
         $result['actions']['children']['maximum_number_product']['arguments']['data']['config'] = [
             'value' => $extensionAttributes['gift_rule'][GiftRuleInterface::MAXIMUM_NUMBER_PRODUCT],
         ];
 
         $result['actions']['children']['price_range']['arguments']['data']['config'] = [
             'value' => $extensionAttributes['gift_rule'][GiftRuleInterface::PRICE_RANGE],
+        ];
+
+        $result['actions']['children']['price_range']['arguments']['data']['config'] = [
+            'value' => $extensionAttributes['gift_rule'][GiftRuleInterface::QUANTITY_RANGE],
         ];
 
         return $result;

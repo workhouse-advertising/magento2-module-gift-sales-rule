@@ -86,6 +86,22 @@ class GiftRule extends AbstractModel implements GiftRuleInterface, IdentityInter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getQuantityRange()
+    {
+        return $this->getData(self::QUANTITY_RANGE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setQuantityRange($quantityRange)
+    {
+        return $this->setData(self::QUANTITY_RANGE, $quantityRange);
+    }
+
+    /**
      * Populate the object from array values
      * It is better to use setters instead of the generic setData method
      *
@@ -97,6 +113,7 @@ class GiftRule extends AbstractModel implements GiftRuleInterface, IdentityInter
     {
         $this->setMaximumNumberProduct($values['maximum_number_product']);
         $this->setPriceRange($values['price_range']);
+        $this->setQuantityRange($values['quantity_range']);
 
         return $this;
     }
