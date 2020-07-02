@@ -189,6 +189,24 @@ class CollectGiftRule implements ObserverInterface
                 }
             }
 
+            // Now check all applied rules to make sure that they are in the list of available rules.
+            // NOTE: We are doing this because if there are multiple gift rules and a user applies both,
+            //       but then removes one of the products from the cart the free gifts will not be removed.
+            // TODO: Submit a bug report and a pull request.
+            foreach ($ruleIds as $ruleId) {
+                if (!isset($giftRules[$ruleId])) {
+                    /** @var Item $item */
+                    foreach ($quote->getAllItems() as $item) {
+                        $option = $item->getOptionByCode('option_gift_rule');
+                        if ($option && $option->getValue() == $ruleId) {
+                            // Remove gift item.
+                            $quote->deleteItem($item);
+                            $saveQuote = true;
+                        }
+                    }
+                }
+            }
+
             /**
              * Save quote if it is not cart add controller and item changed
              */
