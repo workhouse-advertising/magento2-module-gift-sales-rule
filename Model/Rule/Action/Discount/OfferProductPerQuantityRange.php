@@ -150,22 +150,24 @@ class OfferProductPerQuantityRange extends AbstractDiscount
     protected function getTotalValidQuantity($rule, $quote)
     {
         $totalValidQuantity = 0;
-        foreach ($quote->getItems() as $item) {
-            // NOTE: Cloning quote items doesn't work, children won't exist, etc...
-            // $item = clone $quoteItem;
-            // $item->setChildren($quoteItem->getChildren());
-            // NOTE: This is a hacky work-around to allow us to _actually_ validate the cart rule.
-            $item->setBypassGiftRuleValidation(true);
-            $allItems = $item->getAllItems();
-            // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
-            //       to clone the quote without persisting everything and without Magento soiling the bed.
-            $item->setAllItems([$item]);
-            if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
-                $totalValidQuantity += $item->getTotalQty();
+        if ($quote && $quote->getItems()) {
+            foreach ($quote->getItems() as $item) {
+                // NOTE: Cloning quote items doesn't work, children won't exist, etc...
+                // $item = clone $quoteItem;
+                // $item->setChildren($quoteItem->getChildren());
+                // NOTE: This is a hacky work-around to allow us to _actually_ validate the cart rule.
+                $item->setBypassGiftRuleValidation(true);
+                $allItems = $item->getAllItems();
+                // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
+                //       to clone the quote without persisting everything and without Magento soiling the bed.
+                $item->setAllItems([$item]);
+                if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
+                    $totalValidQuantity += $item->getTotalQty();
+                }
+                // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
+                $item->setAllItems($allItems);
+                $item->setBypassGiftRuleValidation(false);
             }
-            // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
-            $item->setAllItems($allItems);
-            $item->setBypassGiftRuleValidation(false);
         }
         return $totalValidQuantity;
     }
