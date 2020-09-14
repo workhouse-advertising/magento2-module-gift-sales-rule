@@ -104,10 +104,10 @@ class CollectGiftRule implements ObserverInterface
         /** @var array $giftRules */
         $giftRules = $this->checkoutSession->getGiftRules();
 
-        if ($giftRules) {
-            /** @var Quote $quote */
-            $quote = $observer->getEvent()->getQuote();
+        /** @var Quote $quote */
+        $quote = $observer->getEvent()->getQuote();
 
+        if ($giftRules) {
             /** @var array $ruleIds */
             $ruleIds = explode(',', $quote->getAppliedRuleIds());
 
@@ -196,14 +196,7 @@ class CollectGiftRule implements ObserverInterface
             foreach ($ruleIds as $ruleId) {
                 if (!isset($giftRules[$ruleId])) {
                     /** @var Item $item */
-                    foreach ($quote->getAllItems() as $item) {
-                        $option = $item->getOptionByCode('option_gift_rule');
-                        if ($option && $option->getValue() == $ruleId) {
-                            // Remove gift item.
-                            $quote->deleteItem($item);
-                            $saveQuote = true;
-                        }
-                    }
+                    $saveQuote = $this->clearGiftItems($quote, $ruleId);
                 }
             }
 
@@ -216,6 +209,36 @@ class CollectGiftRule implements ObserverInterface
             }
 
             $this->checkoutSession->setGiftRules($newGiftRulesList);
+        } else {
+            // Also have to check that free gifts are not applied any more once they are no longer valid.
+            // TODO: Submit a bug report and a pull request.
+            $saveQuote = $this->clearGiftItems($quote);
+            if ($saveQuote
+                && !($this->request->getControllerName() == 'cart' && $this->request->getActionName() == 'add')) {
+                $this->quoteRepository->save($quote);
+            }
         }
     }
+
+    /**
+     * Clear a specific rule from the quote or all gift items.
+     *
+     * @param Quote $quote
+     * @param int|null $ruleId
+     * @return void
+     */
+    protected function clearGiftItems($quote, $ruleId = null)
+    {
+        $saveQuote = false;
+        foreach ($quote->getAllItems() as $item) {
+            $option = $item->getOptionByCode('option_gift_rule');
+            if ($option && (!$ruleId || $option->getValue() == $ruleId)) {
+                // Remove gift item.
+                $quote->deleteItem($item);
+                $saveQuote = true;
+            }
+        }
+        return $saveQuote;
+    }
+
 }
