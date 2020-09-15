@@ -107,9 +107,10 @@ class CollectGiftRule implements ObserverInterface
         /** @var Quote $quote */
         $quote = $observer->getEvent()->getQuote();
 
+        /** @var array $ruleIds */
+        $ruleIds = explode(',', $quote->getAppliedRuleIds());
+
         if ($giftRules) {
-            /** @var array $ruleIds */
-            $ruleIds = explode(',', $quote->getAppliedRuleIds());
 
             $saveQuote = false;
 
@@ -137,6 +138,7 @@ class CollectGiftRule implements ObserverInterface
                         $option = $item->getOptionByCode('option_gift_rule');
                         /** @var Option $configurableOption */
                         $configurableOption = $item->getOptionByCode('simple_product');
+                        // var_dump($configurableOption);
                         if ($option && $option->getValue() == $giftRuleId && !$configurableOption) {
                             $giftItem[] = $item;
                             $giftItemQty += $item->getQty();
@@ -148,6 +150,7 @@ class CollectGiftRule implements ObserverInterface
                     // If only 1 gift product available => add automatic gift product.
                     if ($this->giftRuleConfigHelper->isAutomaticAddEnabled() && count($giftItem) == 0 &&
                         count($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS]) == 1) {
+
                         $this->giftRuleService->addGiftProducts(
                             $quote,
                             [
@@ -163,6 +166,7 @@ class CollectGiftRule implements ObserverInterface
                     }
 
                     if ($giftItemQty > $giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT]) {
+
                         // Delete gift item.
                         $qtyToDelete = $giftItemQty - $giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT];
 
@@ -189,14 +193,17 @@ class CollectGiftRule implements ObserverInterface
                 }
             }
 
+            // NOTE: Setting the current gift rules here otherwise they will still be the old ones when saving the quote.
+            $this->checkoutSession->setGiftRules($newGiftRulesList);
+
             // Now check all applied rules to make sure that they are in the list of available rules.
             // NOTE: We are doing this because if there are multiple gift rules and a user applies both,
             //       but then removes one of the products from the cart the free gifts will not be removed.
             // TODO: Submit a bug report and a pull request.
             foreach ($ruleIds as $ruleId) {
-                if (!isset($giftRules[$ruleId])) {
+                if (!isset($newGiftRulesList[$ruleId])) {
                     /** @var Item $item */
-                    $saveQuote = $this->clearGiftItems($quote, $ruleId);
+                    $saveQuote = $this->clearGiftItems($quote, $ruleId) || $saveQuote;
                 }
             }
 
@@ -205,19 +212,41 @@ class CollectGiftRule implements ObserverInterface
              */
             if ($saveQuote
                 && !($this->request->getControllerName() == 'cart' && $this->request->getActionName() == 'add')) {
-                $this->quoteRepository->save($quote);
+                $this->recollectQuoteTotals($quote);
             }
-
-            $this->checkoutSession->setGiftRules($newGiftRulesList);
         } else {
+            $saveQuote = false;
             // Also have to check that free gifts are not applied any more once they are no longer valid.
             // TODO: Submit a bug report and a pull request.
-            $saveQuote = $this->clearGiftItems($quote);
+            foreach ($quote->getAllItems() as $item) {
+                $option = $item->getOptionByCode('option_gift_rule');
+                $ruleId = ($option) ? $option->getValue() : null;
+                if ($ruleId && !in_array($ruleId, $ruleIds)) {
+                    $saveQuote = $this->clearGiftItems($quote, $ruleId) || $saveQuote;
+                }
+            }
             if ($saveQuote
                 && !($this->request->getControllerName() == 'cart' && $this->request->getActionName() == 'add')) {
-                $this->quoteRepository->save($quote);
+                $this->recollectQuoteTotals($quote);
             }
         }
+    }
+
+    /**
+     * Recollect the quote totals and refresh the current page.
+     *
+     * @param Quote $quote
+     * @return void
+     */
+    protected function recollectQuoteTotals($quote)
+    {
+        // NOTE: Don't use the quoteRepository to save the quote as this could trigger an infinite loop.
+        //       Instead just set the quote to have it's totals re-collected.
+        // TODO: Re-implement the way that the app/lied gift rules are managed so that these sorts of issues
+        //       do not occur._
+        // $this->quoteRepository->save($quote);
+        $quote->setTriggerRecollect(1)->save();
+        // TODO: Consider refreshing the page as this doesn't always actually work for the current page request.
     }
 
     /**
@@ -225,7 +254,7 @@ class CollectGiftRule implements ObserverInterface
      *
      * @param Quote $quote
      * @param int|null $ruleId
-     * @return void
+     * @return boolean
      */
     protected function clearGiftItems($quote, $ruleId = null)
     {

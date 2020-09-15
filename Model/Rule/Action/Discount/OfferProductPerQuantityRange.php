@@ -96,7 +96,10 @@ class OfferProductPerQuantityRange extends AbstractDiscount
         /** @var \Magento\Quote\Model\Quote $quote */
         $quote = $item->getQuote();
 
-        $calculateId = 'calculate_gift_rule_'.$rule->getRuleId();
+        // Have a separate `$calculateId` for each item otherwise this rule will only be checked for a 
+        // single item.
+        // TODO: Report a bug.
+        $calculateId = 'calculate_gift_rule_'.$rule->getRuleId() . '__' . $item->getId();
         if (!$quote->getData($calculateId)) {
             // Set only for performance (not save in DB).
             $quote->setData($calculateId, true);
@@ -127,12 +130,15 @@ class OfferProductPerQuantityRange extends AbstractDiscount
                     $giftRule
                 );
             } else {
+                // NOTE: Cannot remove the gift rules otherwise they will be missed by the CollectGiftRule class.
+                //       We have implemented a work-around for this, but it shouldn't be here anyway.
+                // TODO: Report a bug for the `OfferProductPerPriceRange` class.
                 // Save active gift rule in session.
-                $giftRuleSessionData = $this->checkoutSession->getGiftRules();
-                if (isset($giftRuleSessionData[$rule->getRuleId()])) {
-                    unset($giftRuleSessionData[$rule->getRuleId()]);
-                }
-                $this->checkoutSession->setGiftRules($giftRuleSessionData);
+                // $giftRuleSessionData = $this->checkoutSession->getGiftRules();
+                // if (isset($giftRuleSessionData[$rule->getRuleId()])) {
+                //     unset($giftRuleSessionData[$rule->getRuleId()]);
+                // }
+                // $this->checkoutSession->setGiftRules($giftRuleSessionData);
             }
         }
 

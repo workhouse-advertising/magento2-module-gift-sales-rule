@@ -60,18 +60,47 @@ class CombinePlugin
         //       instead of the current workaround of `$model->getQuote()`.
         // NOTE: Calling `$model->getBypassGiftRuleValidation()` is only here as this will otherwise _always_
         //       return true for _any_ gift rule.
-        if ($this->giftRuleHelper->isGiftRule($subject->getRule()) && $model->getQuote() && !$model->getBypassGiftRuleValidation()) {
-            if (!$this->giftRuleHelper->isValidGiftRule($subject->getRule(), $model->getQuote())) {
-                return false;
-            }
+        if (!$model->getBypassGiftRuleValidation() && $this->giftRuleHelper->isGiftRule($subject->getRule()) && $model->getQuote()) {
             // Shouldn't always return `true` as this just means that we can't actually validate this rule against
             // the actual rule conditions.
             // TODO: Investigate the rationale for always returning `true` but it appears that the cart rule doesn't work at all
             //       without it. This appears to have something to do with the way that this module handles valid rules by storing
             //       them in the session and cache. Very peculiar 
-            return true;
+            // return true;
+            return $this->isGiftRuleActuallyValid($subject->getRule(), $model->getQuote()) && $this->giftRuleHelper->isValidGiftRule($subject->getRule(), $model->getQuote());
         }
 
         return $proceed($model);
+    }
+
+    /**
+     * To test if a gift rule is actually applicable to the cart.
+     *
+     * @param Rule $rule
+     * @param Quote $quote
+     * @return boolean
+     */
+    protected function isGiftRuleActuallyValid($rule, $quote)
+    {
+        $answer = false;
+        // NOTE: Have to check _every_ quote item and test if they pass the gift rule conditions.
+        if ($quote && $quote->getId() && $rule && $rule->getId() && $quote->getItems()) {
+            foreach ($quote->getItems() as $quoteItem) {
+                // TODO: Consider putting this validation nonsense into a helper or something.
+                $quoteItem->setBypassGiftRuleValidation(true);
+                $allItems = $quoteItem->getAllItems();
+                
+                // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
+                //       to clone the quote without persisting everything and without Magento soiling the bed.
+                $quoteItem->setAllItems([$quoteItem]);
+                if (!$quoteItem->getOptionByCode('option_gift_rule') && $rule->validate($quoteItem)) {
+                    $answer = true;
+                }
+                // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
+                $quoteItem->setAllItems($allItems);
+                $quoteItem->setBypassGiftRuleValidation(false);
+            }
+        }
+        return $answer;
     }
 }
