@@ -82,25 +82,6 @@ class CombinePlugin
      */
     protected function isGiftRuleActuallyValid($rule, $quote)
     {
-        $answer = false;
-        // NOTE: Have to check _every_ quote item and test if they pass the gift rule conditions.
-        if ($quote && $quote->getId() && $rule && $rule->getId() && $quote->getItems()) {
-            foreach ($quote->getItems() as $quoteItem) {
-                // TODO: Consider putting this validation nonsense into a helper or something.
-                $quoteItem->setBypassGiftRuleValidation(true);
-                $allItems = $quoteItem->getAllItems();
-                
-                // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
-                //       to clone the quote without persisting everything and without Magento soiling the bed.
-                $quoteItem->setAllItems([$quoteItem]);
-                if (!$quoteItem->getOptionByCode('option_gift_rule') && $rule->validate($quoteItem)) {
-                    $answer = true;
-                }
-                // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
-                $quoteItem->setAllItems($allItems);
-                $quoteItem->setBypassGiftRuleValidation(false);
-            }
-        }
-        return $answer;
+        return $this->giftRuleHelper->willGiftRuleApplyToQuote($rule, $quote);
     }
 }

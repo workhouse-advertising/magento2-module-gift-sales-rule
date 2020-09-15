@@ -23,6 +23,7 @@ use Magento\Quote\Model\Quote\Item;
 use Magento\Quote\Model\Quote\Item\Option;
 use Smile\GiftSalesRule\Helper\Cache as GiftRuleCacheHelper;
 use Smile\GiftSalesRule\Helper\Config as GiftRuleConfigHelper;
+use Smile\GiftSalesRule\Helper\GiftRule as GiftRuleHelper;
 use Smile\GiftSalesRule\Api\GiftRuleServiceInterface;
 
 /**
@@ -54,6 +55,11 @@ class CollectGiftRule implements ObserverInterface
     protected $giftRuleConfigHelper;
 
     /**
+     * @var GiftRuleHelper
+     */
+    protected $giftRuleHelper;
+
+    /**
      * @var CartRepositoryInterface
      */
     protected $quoteRepository;
@@ -70,6 +76,7 @@ class CollectGiftRule implements ObserverInterface
      * @param GiftRuleServiceInterface $giftRuleService      Gift rule service
      * @param GiftRuleCacheHelper      $giftRuleCacheHelper  Gift rule cache helper
      * @param GiftRuleConfigHelper     $giftRuleConfigHelper Gift rule config helper
+     * @param GiftRuleHelper           $giftRuleHelper       Gift rule helper
      * @param CartRepositoryInterface  $quoteRepository      Quote repository
      * @param Http                     $request              Request
      */
@@ -78,6 +85,7 @@ class CollectGiftRule implements ObserverInterface
         GiftRuleServiceInterface $giftRuleService,
         GiftRuleCacheHelper $giftRuleCacheHelper,
         GiftRuleConfigHelper $giftRuleConfigHelper,
+        GiftRuleHelper $giftRuleHelper,
         \Magento\Quote\Api\CartRepositoryInterface $quoteRepository,
         \Magento\Framework\App\Request\Http $request
     ) {
@@ -85,6 +93,7 @@ class CollectGiftRule implements ObserverInterface
         $this->giftRuleService = $giftRuleService;
         $this->giftRuleCacheHelper = $giftRuleCacheHelper;
         $this->giftRuleConfigHelper = $giftRuleConfigHelper;
+        $this->giftRuleHelper = $giftRuleHelper;
         $this->quoteRepository = $quoteRepository;
         $this->request = $request;
     }
@@ -122,9 +131,13 @@ class CollectGiftRule implements ObserverInterface
                     foreach ($quote->getAllItems() as $item) {
                         $option = $item->getOptionByCode('option_gift_rule');
                         if ($option && $option->getValue() == $giftRuleId) {
-                            // Remove gift item.
-                            $quote->deleteItem($item);
-                            $saveQuote = true;
+                            $salesRule = $this->giftRuleHelper->getSalesRuleForGiftRuleId($giftRuleId);
+                            $invalidRule = !$salesRule || !$this->giftRuleHelper->willGiftRuleApplyToQuote($salesRule, $quote);
+                            if ($invalidRule) {
+                                // Remove gift item.
+                                $quote->deleteItem($item);
+                                $saveQuote = true;
+                            }
                         }
                     }
                 } else {
@@ -221,7 +234,9 @@ class CollectGiftRule implements ObserverInterface
             foreach ($quote->getAllItems() as $item) {
                 $option = $item->getOptionByCode('option_gift_rule');
                 $ruleId = ($option) ? $option->getValue() : null;
-                if ($ruleId && !in_array($ruleId, $ruleIds)) {
+                $salesRule = $this->giftRuleHelper->getSalesRuleForGiftRuleId($ruleId);
+                $invalidRule = !$salesRule || !$this->giftRuleHelper->willGiftRuleApplyToQuote($salesRule, $quote);
+                if ($ruleId && !in_array($ruleId, $ruleIds) && $invalidRule) {
                     $saveQuote = $this->clearGiftItems($quote, $ruleId) || $saveQuote;
                 }
             }

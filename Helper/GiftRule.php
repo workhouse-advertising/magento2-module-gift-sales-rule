@@ -18,6 +18,7 @@ use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Quote\Model\Quote;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\RuleFactory;
 use Smile\GiftSalesRule\Api\Data\GiftRuleInterface;
 use Smile\GiftSalesRule\Api\GiftRuleRepositoryInterface;
 
@@ -40,18 +41,26 @@ class GiftRule extends AbstractHelper
     protected $giftRuleRepository;
 
     /**
+     * @var RuleFactory
+     */
+    protected $ruleFactory;
+
+    /**
      * GiftRule constructor.
      *
      * @param Context                     $context            Context
      * @param GiftRuleRepositoryInterface $giftRuleRepository Gift rule repository
+     * @param RuleFactory                 $ruleFactory        Rule factory
      * @param array                       $giftRule           Gift rule
      */
     public function __construct(
         Context $context,
         GiftRuleRepositoryInterface $giftRuleRepository,
+        RuleFactory $ruleFactory,
         array $giftRule = []
     ) {
         $this->giftRuleRepository = $giftRuleRepository;
+        $this->ruleFactory = $ruleFactory;
         $this->giftRule = $giftRule;
 
         parent::__construct($context);
@@ -115,6 +124,56 @@ class GiftRule extends AbstractHelper
         }
 
         return $valid;
+    }
+
+    /**
+     * Get the sales rule for a gift rule.
+     *
+     * @param int $giftRuleId
+     * @return Rule|null
+     */
+    public function getSalesRuleForGiftRuleId($giftRuleId)
+    {
+        $giftRuleId = (int) $giftRuleId;
+        $salesRule = null;
+        try {
+            $salesRule = $this->ruleFactory->create()->load($giftRuleId);
+            $salesRule = ($salesRule && $salesRule->getId()) ? $salesRule : null;
+        } catch (\Exception $e) {
+            // TODO: Catch specific Exceptions.
+        }
+        return $salesRule;
+    }
+
+    /**
+     * To test if a gift rule is actually applicable to the cart.
+     *
+     * @param Rule $rule
+     * @param Quote $quote
+     * @return boolean
+     */
+    public function willGiftRuleApplyToQuote($rule, $quote)
+    {
+        $answer = false;
+        // NOTE: Have to check _every_ quote item and test if they pass the gift rule conditions.
+        if ($quote && $quote->getId() && $rule && $rule->getId() && $this->isGiftRule($rule) && $quote->getItems()) {
+            foreach ($quote->getItems() as $quoteItem) {
+                // TODO: Consider putting this validation nonsense into a helper or something.
+                $quoteItem->setBypassGiftRuleValidation(true);
+                $allItems = $quoteItem->getAllItems();
+                
+                // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
+                //       to clone the quote without persisting everything and without Magento soiling the bed.
+                $quoteItem->setAllItems([$quoteItem]);
+                if (!$quoteItem->getOptionByCode('option_gift_rule') && $rule->validate($quoteItem)) {
+                    $answer = true;
+                }
+                // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
+                $quoteItem->setAllItems($allItems);
+                $quoteItem->setBypassGiftRuleValidation(false);
+            }
+        }
+        return $answer;
     }
 
     /**
