@@ -37,7 +37,7 @@ class CollectGiftRule implements ObserverInterface
      * This is a _nasty_ hack to prevent infinite loop issues with collecting gift rules.
      * TODO: Magento should _never_ allow an infinite loop as the core Quote class _should_ prevent this.
      *       Unfortunately Magento core developers have absolutely no idea what they are doing and we have 
-     *       to deal with the awful mess that we have available to us. 
+     *       to deal with the awful pile of manure that we have before us. 
      *       This sucks.
      *
      * @var boolean
