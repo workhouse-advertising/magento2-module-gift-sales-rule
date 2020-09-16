@@ -34,6 +34,17 @@ use Smile\GiftSalesRule\Api\GiftRuleServiceInterface;
 class CollectGiftRule implements ObserverInterface
 {
     /**
+     * This is a _nasty_ hack to prevent infinite loop issues with collecting gift rules.
+     * TODO: Magento should _never_ allow an infinite loop as the core Quote class _should_ prevent this.
+     *       Unfortunately Magento core developers have absolutely no idea what they are doing and we have 
+     *       to deal with the awful mess that we have available to us. 
+     *       This sucks.
+     *
+     * @var boolean
+     */
+    protected static $giftRulesCollecting = false;
+
+    /**
      * @var CheckoutSession
      */
     protected $checkoutSession;
@@ -107,10 +118,15 @@ class CollectGiftRule implements ObserverInterface
         /** @var Quote $quote */
         $quote = $observer->getEvent()->getQuote();
 
+        
+
         /** @var array $ruleIds */
         $ruleIds = explode(',', $quote->getAppliedRuleIds());
 
-        if ($giftRules) {
+        $proceed = !self::$giftRulesCollecting;
+        self::$giftRulesCollecting = true;
+
+        if ($proceed && $giftRules) {
 
             $saveQuote = false;
 
@@ -196,6 +212,8 @@ class CollectGiftRule implements ObserverInterface
             // NOTE: Setting the current gift rules here otherwise they will still be the old ones when saving the quote.
             $this->checkoutSession->setGiftRules($newGiftRulesList);
 
+            
+
             // Now check all applied rules to make sure that they are in the list of available rules.
             // NOTE: We are doing this because if there are multiple gift rules and a user applies both,
             //       but then removes one of the products from the cart the free gifts will not be removed.
@@ -214,7 +232,7 @@ class CollectGiftRule implements ObserverInterface
                 && !($this->request->getControllerName() == 'cart' && $this->request->getActionName() == 'add')) {
                 $this->recollectQuoteTotals($quote);
             }
-        } else {
+        } elseif ($proceed) {
             $saveQuote = false;
             // Also have to check that free gifts are not applied any more once they are no longer valid.
             // TODO: Submit a bug report and a pull request.
@@ -230,6 +248,9 @@ class CollectGiftRule implements ObserverInterface
                 $this->recollectQuoteTotals($quote);
             }
         }
+
+        self::$giftRulesCollecting = false;
+        
     }
 
     /**

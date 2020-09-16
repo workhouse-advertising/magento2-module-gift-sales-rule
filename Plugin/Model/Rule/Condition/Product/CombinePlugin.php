@@ -67,7 +67,7 @@ class CombinePlugin
             //       without it. This appears to have something to do with the way that this module handles valid rules by storing
             //       them in the session and cache. Very peculiar 
             // return true;
-            return $this->isGiftRuleActuallyValid($subject->getRule(), $model->getQuote()) && $this->giftRuleHelper->isValidGiftRule($subject->getRule(), $model->getQuote());
+            return $this->isGiftRuleActuallyValid($subject->getRule(), $model->getQuote());
         }
 
         return $proceed($model);
@@ -93,12 +93,19 @@ class CombinePlugin
                 // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
                 //       to clone the quote without persisting everything and without Magento soiling the bed.
                 $quoteItem->setAllItems([$quoteItem]);
-                if (!$quoteItem->getOptionByCode('option_gift_rule') && $rule->validate($quoteItem)) {
-                    $answer = true;
+                try {
+                    // if (!$quoteItem->getOptionByCode('option_gift_rule') && $rule->getConditions()->validate($quoteItem)) {
+                    if (!$quoteItem->getOptionByCode('option_gift_rule') && $rule->validate($quoteItem)) {
+                        $answer = true;
+                    }
+                } catch (\Exception $e) {
+                    // TODO: Log that something failed.
                 }
                 // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
                 $quoteItem->setAllItems($allItems);
                 $quoteItem->setBypassGiftRuleValidation(false);
+
+                if ($answer) break;
             }
         }
         return $answer;
