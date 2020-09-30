@@ -123,7 +123,7 @@ class CollectGiftRule implements ObserverInterface
         /** @var array $ruleIds */
         $ruleIds = explode(',', $quote->getAppliedRuleIds());
 
-        $proceed = !self::$giftRulesCollecting;
+        $proceed = !self::$giftRulesCollecting && $quote && $quote->getId() && $quote->getAllItems();
         self::$giftRulesCollecting = true;
 
         if ($proceed && $giftRules) {
@@ -233,20 +233,20 @@ class CollectGiftRule implements ObserverInterface
                 $this->recollectQuoteTotals($quote);
             }
         } elseif ($proceed) {
-            $saveQuote = false;
-            // Also have to check that free gifts are not applied any more once they are no longer valid.
-            // TODO: Submit a bug report and a pull request.
-            foreach ($quote->getAllItems() as $item) {
-                $option = $item->getOptionByCode('option_gift_rule');
-                $ruleId = ($option) ? $option->getValue() : null;
-                if ($ruleId && !in_array($ruleId, $ruleIds)) {
-                    $saveQuote = $this->clearGiftItems($quote, $ruleId) || $saveQuote;
-                }
-            }
-            if ($saveQuote
-                && !($this->request->getControllerName() == 'cart' && $this->request->getActionName() == 'add')) {
-                $this->recollectQuoteTotals($quote);
-            }
+            // $saveQuote = false;
+            // // Also have to check that free gifts are not applied any more once they are no longer valid.
+            // // TODO: Submit a bug report and a pull request.
+            // foreach ($quote->getAllItems() as $item) {
+            //     $option = $item->getOptionByCode('option_gift_rule');
+            //     $ruleId = ($option) ? $option->getValue() : null;
+            //     if ($ruleId && !in_array($ruleId, $ruleIds)) {
+            //         $saveQuote = $this->clearGiftItems($quote, $ruleId) || $saveQuote;
+            //     }
+            // }
+            // if ($saveQuote
+            //     && !($this->request->getControllerName() == 'cart' && $this->request->getActionName() == 'add')) {
+            //     $this->recollectQuoteTotals($quote);
+            // }
         }
 
         self::$giftRulesCollecting = false;

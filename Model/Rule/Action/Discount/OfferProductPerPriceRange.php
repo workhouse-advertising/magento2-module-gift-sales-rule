@@ -125,12 +125,12 @@ class OfferProductPerPriceRange extends AbstractDiscount
                     $giftRule
                 );
             } else {
-                // Save active gift rule in session.
-                $giftRuleSessionData = $this->checkoutSession->getGiftRules();
-                if (isset($giftRuleSessionData[$rule->getRuleId()])) {
-                    unset($giftRuleSessionData[$rule->getRuleId()]);
-                }
-                $this->checkoutSession->setGiftRules($giftRuleSessionData);
+                // // Save active gift rule in session.
+                // $giftRuleSessionData = $this->checkoutSession->getGiftRules();
+                // if (isset($giftRuleSessionData[$rule->getRuleId()])) {
+                //     unset($giftRuleSessionData[$rule->getRuleId()]);
+                // }
+                // $this->checkoutSession->setGiftRules($giftRuleSessionData);
             }
         }
 

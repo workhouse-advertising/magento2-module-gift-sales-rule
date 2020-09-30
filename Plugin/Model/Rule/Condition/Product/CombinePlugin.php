@@ -107,6 +107,11 @@ class CombinePlugin
 
                 if ($answer) break;
             }
+        } else {
+            // Default to true when there's no quote or quote items as this will be hit when an order is being submitted.
+            // In fact, this seems to occur more frequently than it really should, and not just when an order is being submitted.
+            // TODO: Investigate why.
+            $answer = true;
         }
         return $answer;
     }
