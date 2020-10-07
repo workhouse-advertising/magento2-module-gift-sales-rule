@@ -137,7 +137,7 @@ class Cache extends AbstractHelper
         }
 
         if (!is_array($giftRuleData)) {
-            $giftRuleData = unserialize($giftRuleData);
+            $giftRuleData = unserialize($giftRuleData) ?: [];
         }
 
         return $giftRuleData;

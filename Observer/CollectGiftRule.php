@@ -161,7 +161,10 @@ class CollectGiftRule implements ObserverInterface
                         }
                     }
 
-                    $giftRuleData = $this->giftRuleCacheHelper->getCachedGiftRule($giftRuleCode);
+                    $giftRuleData = $this->giftRuleCacheHelper->getCachedGiftRule($giftRuleCode) ?: [];
+                    if (!is_array($giftRuleData)) {
+                        $giftRuleData = [];
+                    }
 
                     // If only 1 gift product available => add automatic gift product.
                     if ($this->giftRuleConfigHelper->isAutomaticAddEnabled() && count($giftItem) == 0 &&
