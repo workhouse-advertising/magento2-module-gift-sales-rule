@@ -182,6 +182,8 @@ class CollectGiftRule implements ObserverInterface
                         );
                         $saveQuote = true;
                     } elseif ($this->giftRuleConfigHelper->isAutomaticAddEnabled() 
+                             && $giftRuleData
+                             && isset($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS], $giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT])
                              && count($giftItem) == 1
                              && count($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS]) == 1
                              && $giftItemQty < $giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT]) {
