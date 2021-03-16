@@ -103,7 +103,7 @@ class ValueProviderPlugin
         ];
 
         $result['actions']['children']['quantity_range']['arguments']['data']['config'] = [
-            'value' => $extensionAttributes['gift_rule'][GiftRuleInterface::QUANTITY_RANGE],
+            'value' => $extAttributes ? $extAttributes['gift_rule'][GiftRuleInterface::QUANTITY_RANGE] : '',
         ];
 
         return $result;
