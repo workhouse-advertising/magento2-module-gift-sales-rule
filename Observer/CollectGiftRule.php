@@ -203,14 +203,14 @@ class CollectGiftRule implements ObserverInterface
                         $saveQuote = true;
                     } elseif ($this->giftRuleConfigHelper->isAutomaticAddEnabled() 
                              && $giftRuleData
-                             && isset($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS], $giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT])
+                             && isset($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS], $numberOfferedProduct)
                              && count($giftItem) == 1
                              && count($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS]) == 1
-                             && $giftItemQty < $giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT]) {
+                             && $giftItemQty < $numberOfferedProduct) {
                         // Increase the gift quantity if automatic add is enabled and the current quantity is less that the offered quantity.
                         // TODO: Consider adding a configuration option whether or not to increase the gift quantity.
                         $quoteGiftItem = reset($giftItem);
-                        $quoteGiftItem->setQty($giftRuleData[GiftRuleCacheHelper::DATA_NUMBER_OFFERED_PRODUCT]);
+                        $quoteGiftItem->setQty($numberOfferedProduct);
                         $saveQuote = true;
                     }
 
