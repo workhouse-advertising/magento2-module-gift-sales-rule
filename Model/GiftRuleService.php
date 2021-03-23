@@ -144,7 +144,9 @@ class GiftRuleService implements GiftRuleServiceInterface
                     = $this->giftRuleHelper->getNumberOfferedProduct(
                         $quote,
                         $giftRuleCachedData[GiftRuleCacheHelper::DATA_MAXIMUM_NUMBER_PRODUCT],
-                        $giftRuleCachedData[GiftRuleCacheHelper::DATA_PRICE_RANGE]
+                        $giftRuleCachedData[GiftRuleCacheHelper::DATA_PRICE_RANGE] ?? null,
+                        $giftRuleCachedData[GiftRuleCacheHelper::DATA_QUANTITY_RANGE] ?? null,
+                        $giftRuleCachedData[GiftRuleCacheHelper::DATA_RULE_ID] ?? null
                     );
                 $gifts[$giftRuleId][GiftRuleDataInterface::REST_NUMBER]
                     = $gifts[$giftRuleId][GiftRuleDataInterface::NUMBER_OFFERED_PRODUCT];
@@ -280,7 +282,9 @@ class GiftRuleService implements GiftRuleServiceInterface
             && $qty <= $this->giftRuleHelper->getNumberOfferedProduct(
                 $quote,
                 $giftRuleData[GiftRuleCacheHelper::DATA_MAXIMUM_NUMBER_PRODUCT],
-                $giftRuleData[GiftRuleCacheHelper::DATA_PRICE_RANGE]
+                $giftRuleData[GiftRuleCacheHelper::DATA_PRICE_RANGE] ?? null,
+                $giftRuleData[GiftRuleCacheHelper::DATA_QUANTITY_RANGE] ?? null,
+                $giftRuleData[GiftRuleCacheHelper::DATA_RULE_ID] ?? null
             )
         ) {
             $isAuthorizedGiftProduct = true;

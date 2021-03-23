@@ -25,6 +25,7 @@ use Magento\SalesRule\Api\Data\RuleInterface;
 use Smile\GiftSalesRule\Api\Data\GiftRuleInterface;
 use Smile\GiftSalesRule\Api\GiftRuleRepositoryInterface;
 use Smile\GiftSalesRule\Helper\Cache as GiftRuleCacheHelper;
+use Smile\GiftSalesRule\Helper\GiftRule as GiftRuleHelper;
 use Smile\GiftSalesRule\Model\GiftRule;
 
 /**
@@ -66,10 +67,12 @@ class OfferProductPerQuantityRange extends AbstractDiscount
         PriceCurrencyInterface $priceCurrency,
         checkoutSession $checkoutSession,
         GiftRuleCacheHelper $giftRuleCacheHelper,
+        GiftRuleHelper $giftRuleHelper,
         GiftRuleRepositoryInterface $giftRuleRepository
     ) {
         $this->checkoutSession = $checkoutSession;
         $this->giftRuleCacheHelper = $giftRuleCacheHelper;
+        $this->giftRuleHelper = $giftRuleHelper;
         $this->giftRuleRepository = $giftRuleRepository;
 
         parent::__construct(
@@ -111,7 +114,7 @@ class OfferProductPerQuantityRange extends AbstractDiscount
             $giftRule = $this->giftRuleRepository->getById($rule->getRuleId());
 
             // Match the quantity from the rule conditions
-            $totalValidQuantity = $this->getTotalValidQuantity($rule, $item->getQuote());
+            $totalValidQuantity = $this->giftRuleHelper->getTotalValidQuantity($rule, $item->getQuote());
 
             if ($totalValidQuantity >= $giftRule->getQuantityRange()) {
                 $range = floor($totalValidQuantity / $giftRule->getQuantityRange());
@@ -121,8 +124,11 @@ class OfferProductPerQuantityRange extends AbstractDiscount
                 $giftRuleSessionData[$rule->getRuleId()] = $rule->getRuleId() . '_' . $range;
                 $this->checkoutSession->setGiftRules($giftRuleSessionData);
 
+                // TODO: So this module now sets the number of available gifts in a different manner rather
+                //       than changing the $giftRule object. Investigate the new bugs introduced by this change
+                //       and report them to Smile.
                 // Set number offered product.
-                $giftRule->setNumberOfferedProduct($giftRule->getMaximumNumberProduct() * $range);
+                // $giftRule->setNumberOfferedProduct($giftRule->getMaximumNumberProduct() * $range);
 
                 $this->giftRuleCacheHelper->saveCachedGiftRule(
                     $rule->getRuleId() . '_' . $range,
@@ -143,38 +149,5 @@ class OfferProductPerQuantityRange extends AbstractDiscount
         }
 
         return $discountData;
-    }
-
-    /**
-     * Get the total valid quantity for a quote based off of the items that are valid for
-     * the current cart rule conditions.
-     *
-     * @param Rule $rule
-     * @param Quote $quote
-     * @return void
-     */
-    protected function getTotalValidQuantity($rule, $quote)
-    {
-        $totalValidQuantity = 0;
-        if ($quote && $quote->getItems()) {
-            foreach ($quote->getItems() as $item) {
-                // NOTE: Cloning quote items doesn't work, children won't exist, etc...
-                // $item = clone $quoteItem;
-                // $item->setChildren($quoteItem->getChildren());
-                // NOTE: This is a hacky work-around to allow us to _actually_ validate the cart rule.
-                $item->setBypassGiftRuleValidation(true);
-                $allItems = $item->getAllItems();
-                // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
-                //       to clone the quote without persisting everything and without Magento soiling the bed.
-                $item->setAllItems([$item]);
-                if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
-                    $totalValidQuantity += $item->getTotalQty();
-                }
-                // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
-                $item->setAllItems($allItems);
-                $item->setBypassGiftRuleValidation(false);
-            }
-        }
-        return $totalValidQuantity;
     }
 }

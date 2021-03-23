@@ -181,7 +181,9 @@ class CollectGiftRule implements ObserverInterface
                     $numberOfferedProduct = $this->giftRuleHelper->getNumberOfferedProduct(
                         $quote,
                         $giftRuleData[GiftRuleCacheHelper::DATA_MAXIMUM_NUMBER_PRODUCT],
-                        $giftRuleData[GiftRuleCacheHelper::DATA_PRICE_RANGE]
+                        $giftRuleData[GiftRuleCacheHelper::DATA_PRICE_RANGE] ?? null,
+                        $giftRuleData[GiftRuleCacheHelper::DATA_QUANTITY_RANGE] ?? null,
+                        $giftRuleData[GiftRuleCacheHelper::DATA_RULE_ID] ?? null
                     );
 
                     // If only 1 gift product available => add automatic gift product.
@@ -189,18 +191,24 @@ class CollectGiftRule implements ObserverInterface
                         && isset($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS])
                         && count($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS]) == 1) {
 
-                        $this->giftRuleService->addGiftProducts(
-                            $quote,
-                            [
+                        // TODO: Report a bug where if a product cannot be added to the cart then the entire cart
+                        //       is rendered inaccessible due to an Exception.
+                        try {
+                            $this->giftRuleService->addGiftProducts(
+                                $quote,
                                 [
-                                    'id' => key($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS]),
-                                    'qty' => $numberOfferedProduct,
+                                    [
+                                        'id' => key($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS]),
+                                        'qty' => $numberOfferedProduct,
+                                    ],
                                 ],
-                            ],
-                            $giftRuleCode,
-                            $giftRuleId
-                        );
-                        $saveQuote = true;
+                                $giftRuleCode,
+                                $giftRuleId
+                            );
+                            $saveQuote = true;
+                        } catch (\Exception $e) {
+                            // TODO: Alert errors and log the Exception.
+                        }
                     } elseif ($this->giftRuleConfigHelper->isAutomaticAddEnabled() 
                              && $giftRuleData
                              && isset($giftRuleData[GiftRuleCacheHelper::DATA_PRODUCT_ITEMS], $numberOfferedProduct)

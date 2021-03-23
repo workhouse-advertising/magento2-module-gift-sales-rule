@@ -19,6 +19,7 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Item\AbstractItem;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\RuleFactory;
 use Smile\GiftSalesRule\Api\Data\GiftRuleInterface;
 use Smile\GiftSalesRule\Api\GiftRuleRepositoryInterface;
 
@@ -50,9 +51,11 @@ class GiftRule extends AbstractHelper
     public function __construct(
         Context $context,
         GiftRuleRepositoryInterface $giftRuleRepository,
+        RuleFactory $ruleFactory,
         array $giftRule = []
     ) {
         $this->giftRuleRepository = $giftRuleRepository;
+        $this->ruleFactory = $ruleFactory;
         $this->giftRule = $giftRule;
 
         parent::__construct($context);
@@ -147,7 +150,21 @@ class GiftRule extends AbstractHelper
      */
     public function getRange($total, $priceRange)
     {
+        
         return floor($total / $priceRange);
+    }
+
+    /**
+     * Get quantity range of a gift rule for a quote.
+     *
+     * @param int $totalValidQuantity      Total valid quantity
+     * @param int $quantityRange           Quantity range
+     *
+     * @return int
+     */
+    public function getQuantityRange($totalValidQuantity, $quantityRange)
+    {
+        return floor($totalValidQuantity / $quantityRange);
     }
 
     /**
@@ -156,12 +173,20 @@ class GiftRule extends AbstractHelper
      * @param Quote $quote                Quote
      * @param float $maximumNumberProduct Maximum number product
      * @param float $priceRange           Price range
+     * @param int   $quantityRange        Quantity range
      * @return int
      */
-    public function getNumberOfferedProduct($quote, $maximumNumberProduct, $priceRange)
+    public function getNumberOfferedProduct($quote, $maximumNumberProduct, $priceRange = null, $quantityRange = null, $ruleId = null)
     {
         $numberOfferedProduct = $maximumNumberProduct;
-        if (floatval($priceRange) > 0) {
+
+        if ($quantityRange) {
+            $rule = ($ruleId) ? $this->ruleFactory->create()->load($ruleId) : null;
+            $range = $this->getQuantityRange($this->getTotalValidQuantity($rule, $quote), $quantityRange);
+            // TODO: Need a third parameter as `maximumNumberProduct` is not actually the maximum number of products,
+            //       it's the number of products to offer for each "range".
+            $numberOfferedProduct = $maximumNumberProduct * $range;
+        } elseif (floatval($priceRange) > 0) {
             $shippingAddress = $quote->getShippingAddress();
             // In some weird cases with multi-shipping feature enabled, we need to get the orig data.
             // Example: Go to the checkout and come back to the cart page.
@@ -183,5 +208,35 @@ class GiftRule extends AbstractHelper
     public function isGiftItem(AbstractItem $item): bool
     {
         return (bool) $item->getOptionByCode('option_gift_rule');
+    }
+
+    /**
+     * Get the total valid quantity for a quote based off of the items that are valid for
+     * the current cart rule conditions.
+     *
+     * @param Rule $rule
+     * @param Quote $quote
+     * @return void
+     */
+    public function getTotalValidQuantity($rule, $quote)
+    {
+        $totalValidQuantity = 0;
+        if ($rule && $rule->getId() && $quote && $quote->getItems()) {
+            foreach ($quote->getItems() as $item) {
+                // NOTE: Cloning quote items doesn't work, children won't exist, etc...
+                // $item = clone $quoteItem;
+                // $item->setChildren($quoteItem->getChildren());
+                $allItems = $item->getAllItems();
+                // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
+                //       to clone the quote without persisting everything and without Magento soiling the bed.
+                $item->setAllItems([$item]);
+                if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
+                    $totalValidQuantity += $item->getTotalQty();
+                }
+                // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
+                $item->setAllItems($allItems);
+            }
+        }
+        return $totalValidQuantity;
     }
 }

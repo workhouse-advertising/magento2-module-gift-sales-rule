@@ -43,7 +43,9 @@ class Cache extends AbstractHelper
     const DATA_PRODUCT_ITEMS          = "product_items";
     const DATA_LABEL                  = "label";
     const DATA_PRICE_RANGE            = "price_range";
+    const DATA_QUANTITY_RANGE         = 'quantity_range';
     const DATA_MAXIMUM_NUMBER_PRODUCT = "maximum_number_product";
+    const DATA_RULE_ID                = 'rule_id';
 
     /**
      * @var CacheInterface
@@ -135,11 +137,17 @@ class Cache extends AbstractHelper
                 $productCacheTags[] = Product::CACHE_TAG . '_' . $item->getEntityId();
             }
 
+            // Check for quantity ranges.
+            // TODO: Why not just cache the whole gift rule so we have access to it later? Why store so little in the cache?
+            $isQuantityRange = $rule->getSimpleAction() == GiftRuleInterface::OFFER_PRODUCT_PER_QUANTITY_RANGE;
+
             $giftRuleData = [
                 self::DATA_LABEL => $rule->getStoreLabel(),
-                self::DATA_PRICE_RANGE => $giftRule->getPriceRange(),
+                self::DATA_PRICE_RANGE => (!$isQuantityRange) ? $giftRule->getPriceRange() : null,
+                self::DATA_QUANTITY_RANGE => ($isQuantityRange) ? $giftRule->getQuantityRange() : null,
                 self::DATA_MAXIMUM_NUMBER_PRODUCT => $giftRule->getMaximumNumberProduct(),
                 self::DATA_PRODUCT_ITEMS => $items,
+                self::DATA_RULE_ID => $rule ? $rule->getId() : null,
             ];
 
             // Dispatch an event to be able to add/change data in gift rule cache.
