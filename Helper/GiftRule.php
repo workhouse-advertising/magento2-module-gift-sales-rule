@@ -221,8 +221,8 @@ class GiftRule extends AbstractHelper
     public function getTotalValidQuantity($rule, $quote)
     {
         $totalValidQuantity = 0;
-        if ($rule && $rule->getId() && $quote && $quote->getItems()) {
-            foreach ($quote->getItems() as $item) {
+        if ($rule && $rule->getId() && $quote && $quote->getAllItems()) {
+            foreach ($quote->getAllItems() as $item) {
                 // NOTE: Cloning quote items doesn't work, children won't exist, etc...
                 // $item = clone $quoteItem;
                 // $item->setChildren($quoteItem->getChildren());
