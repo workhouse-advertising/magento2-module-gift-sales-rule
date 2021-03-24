@@ -230,7 +230,11 @@ class GiftRule extends AbstractHelper
                 // TODO: Should we be validating a Quote object? Investigate if so and how we would be able
                 //       to clone the quote without persisting everything and without Magento soiling the bed.
                 $item->setAllItems([$item]);
-                if (!$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
+
+                // TODO: Add an option whether or not to skip child items.
+                $isChildItem = (bool) $item->getData('parent_item_id');
+
+                if (!$isChildItem && !$item->getOptionByCode('option_gift_rule') && $rule->validate($item)) {
                     $totalValidQuantity += $item->getTotalQty();
                 }
                 // NOTE Resetting all items should be pointless as they shouldn't be set on a quote item anyway.
